@@ -1,6 +1,7 @@
 use std::env;
 
 mod one;
+mod two;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -14,6 +15,7 @@ fn main() {
 
     match num {
         1 => one::run(),
+        2 => two::run(),
         _ => println!("Invalid advent number! \"{}\"", num),
     }
 }
