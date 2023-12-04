@@ -3,6 +3,7 @@ use std::env;
 mod one;
 mod two;
 mod three;
+mod four;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -18,6 +19,7 @@ fn main() {
         1 => one::run(),
         2 => two::run(),
         3 => three::run(),
+        4 => four::run(),
         _ => println!("Invalid advent number! \"{}\"", num),
     }
 }
