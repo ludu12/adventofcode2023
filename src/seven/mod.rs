@@ -3,7 +3,6 @@
 use std::cmp::Ordering;
 use std::collections::{BTreeSet, HashMap};
 use std::fmt;
-use std::intrinsics::drop_in_place;
 use itertools::Itertools;
 
 pub fn run() {
