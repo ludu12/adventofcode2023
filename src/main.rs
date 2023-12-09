@@ -8,6 +8,7 @@ mod five;
 mod six;
 mod seven;
 mod eight;
+mod nine;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -28,6 +29,7 @@ fn main() {
         6 => six::run(),
         7 => seven::run(),
         8 => eight::run(),
+        9 => nine::run(),
         _ => println!("Invalid advent number! \"{}\"", num),
     }
 }
