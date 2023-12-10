@@ -7,7 +7,7 @@ pub fn run() {
     let input = include_str!("input.txt");
     let part1 = process(input, false);
     println!("Part1: {}", part1.to_string());
-    
+
     let part2 = process(input, true);
     println!("Part2: {}", part2.to_string());
 }
