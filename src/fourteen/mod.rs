@@ -62,10 +62,10 @@ fn tilt(grid: &mut Vec<Vec<char>>, direction: Direction) {
         Direction::East => (0..rows_len),
     };
 
-    for c in 0..cols {
+    for c in cols {
         let mut index = 0;
 
-        for r in 0..rows {
+        for r in rows {
             match grid[r][c] {
                 '#' => {
                     index = r;
@@ -91,22 +91,21 @@ fn process(input: &str, part2: bool) -> u32 {
     let mut g = grid(input);
 
     if part2 {
-        for c in 0..3 {
-            tilt(&mut g);
-            g = rotate(g);
-            tilt(&mut g);
-            g = rotate(g);
-            tilt(&mut g);
-            g = rotate(g);
-            tilt(&mut g);
-            g = rotate(g);
-        }
+        println!("{:?}", g);
+        tilt(&mut g, Direction::North);
+        println!("{:?}", g);
+        tilt(&mut g, Direction::West);
+        println!("{:?}", g);
+        tilt(&mut g, Direction::South);
+        println!("{:?}", g);
+        tilt(&mut g, Direction::East);
+        println!("{:?}", g);
     } else {
-        tilt(&mut g);
+        tilt(&mut g, Direction::North);
     }
 
     let t = calc(&g);
-    return t as u32
+    return t as u32;
 }
 
 
@@ -139,7 +138,16 @@ O.#..O.#.#
     }
 
     #[test]
-    fn part2() {
+    fn part2a() {
+        let input = "O.O.
+O#O.
+.O.O
+....";
+        assert_eq!(20, process(input, false));
+    }
+
+    #[test]
+    fn part2b() {
         let input = "O....#....
 O.OO#....#
 .....##...
