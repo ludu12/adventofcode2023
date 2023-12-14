@@ -6,7 +6,7 @@ use std::collections::HashMap;
 use std::fmt::format;
 use std::panic::panic_any;
 use itertools::{Itertools, join};
-use crate::utils::{grid, rotate, transpose};
+use crate::utils::{grid, transpose};
 
 pub fn run() {
     let input = include_str!("input.txt");
@@ -17,13 +17,6 @@ pub fn run() {
     println!("Part2: {}", part2.to_string());
 }
 
-
-enum Direction {
-    North,
-    West,
-    South,
-    East,
-}
 
 fn calc(grid: &Vec<Vec<char>>) -> usize {
     let rows = grid.len();
@@ -43,29 +36,15 @@ fn calc(grid: &Vec<Vec<char>>) -> usize {
     answer
 }
 
-fn tilt(grid: &mut Vec<Vec<char>>, direction: Direction) {
+fn tilt(grid: &mut Vec<Vec<char>>) {
     let rows_len = grid.len();
     let cols_len = grid[0].len();
     assert_eq!(rows_len, cols_len); // theres sort of an assumption here that this is a n x n grid
 
-    let cols = match direction {
-        Direction::North => (0..cols_len),
-        Direction::West => (0..cols_len),
-        Direction::South => (0..cols_len).rev(),
-        Direction::East => (0..cols_len),
-    };
-
-    let rows = match direction {
-        Direction::North => (0..rows_len),
-        Direction::West => (0..rows_len),
-        Direction::South => (0..rows_len).rev(),
-        Direction::East => (0..rows_len),
-    };
-
-    for c in cols {
+    for c in (0..cols_len) {
         let mut index = 0;
 
-        for r in rows {
+        for r in (0..rows_len) {
             match grid[r][c] {
                 '#' => {
                     index = r;
@@ -87,21 +66,34 @@ fn tilt(grid: &mut Vec<Vec<char>>, direction: Direction) {
     }
 }
 
+fn rotate(grid: &Vec<Vec<char>>) -> Vec<Vec<char>> {
+    let mut new_grid = vec![vec!['.'; grid.len()]; grid[0].len()];
+    for r in 0..grid.len() {
+        for c in 0..grid[0].len() {
+            new_grid[c][grid.len() - 1 - r] = grid[r][c];
+        }
+    }
+    new_grid
+}
+
 fn process(input: &str, part2: bool) -> u32 {
     let mut g = grid(input);
 
     if part2 {
-        println!("{:?}", g);
-        tilt(&mut g, Direction::North);
-        println!("{:?}", g);
-        tilt(&mut g, Direction::West);
-        println!("{:?}", g);
-        tilt(&mut g, Direction::South);
-        println!("{:?}", g);
-        tilt(&mut g, Direction::East);
-        println!("{:?}", g);
+        let mut seen = HashMap::new();
+        for i in 1..1000000000 {
+            for _ in 0..4 {
+                tilt(&mut g);
+                g = rotate(&g);
+            }
+            if let Some(seen_at) = seen.insert(g.clone(), i) {
+                if (1000000000 - i) % (i - seen_at) == 0 {
+                    break;
+                }
+            }
+        }
     } else {
-        tilt(&mut g, Direction::North);
+        tilt(&mut g);
     }
 
     let t = calc(&g);
@@ -158,6 +150,6 @@ O.#..O.#.#
 .......O..
 #....###..
 #OO..#....";
-        assert_eq!(136, process(input, true));
+        assert_eq!(64, process(input, true));
     }
 }
