@@ -2,11 +2,10 @@
 
 use std::cmp::min;
 use std::cmp::max;
-use std::collections::HashMap;
+use std::collections::{HashMap, VecDeque};
 use std::fmt::format;
 use std::panic::panic_any;
 use itertools::{Itertools, join};
-use log::debug;
 use crate::utils::{grid, transpose};
 
 pub fn run() {
@@ -19,12 +18,67 @@ pub fn run() {
 }
 
 
-fn hash(s: &[u8]) -> u32 {
-    s.iter().fold(0, |curr, &b| (curr + b as u32) * 17 % 256)
+fn hash(s: &[u8]) -> usize {
+    s.iter().fold(0, |curr, &b| (curr + b as usize) * 17 % 256)
+}
+
+#[derive(Debug, Eq, PartialEq, PartialOrd, Ord)]
+struct LensBox {
+    num: usize,
+    lens_vec: VecDeque<(String, u8)>,
+}
+
+impl LensBox {
+    fn new(n: usize) -> Self {
+        Self { num: n, lens_vec: VecDeque::new() }
+    }
+
+    fn power(&self) -> u32 {
+        let p: usize = self.lens_vec.iter().enumerate()
+            .map(|(i, lens)| (self.num + 1) * (i + 1) * lens.1 as usize)
+            .sum();
+
+        return p as u32
+    }
 }
 
 fn process(input: &str, part2: bool) -> u32 {
-    return input.trim().split(",").map(|l| hash(l.as_bytes())).sum();
+    let entries = input.trim().split(",").collect_vec();
+
+    return if part2 {
+        let mut boxes = (0..256).map(LensBox::new).collect::<Vec<LensBox>>();
+
+        for entry in entries {
+            let (label, f) = entry.split_once(['=', '-']).unwrap();
+            let h = hash(label.as_bytes());
+
+            // - operation
+            if f.is_empty() {
+                if let Some(i) = boxes[h].lens_vec.iter().position(|(l, i)| *l == label ) {
+                    boxes[h].lens_vec.remove(i);
+                }
+            }
+            // + operation
+            else {
+                let tuple = (label.to_string(), f.parse().unwrap());
+                if let Some(i) = boxes[h].lens_vec.iter().position(|(l, i)| *l == label ) {
+                    boxes[h].lens_vec[i] = tuple;
+                }
+                else {
+                    boxes[h].lens_vec.push_back(tuple)
+                }
+            }
+        }
+
+        boxes.iter().filter_map(|b|
+            if b.lens_vec.is_empty() {
+                None
+            } else {
+                Some(b.power())
+            }).sum()
+    } else {
+        entries.iter().map(|l| hash(l.as_bytes()) as u32).sum()
+    };
 }
 
 
@@ -36,5 +90,11 @@ mod test {
     fn part1a() {
         let input = "rn=1,cm-,qp=3,cm=2,qp-,pc=4,ot=9,ab=5,pc-,pc=6,ot=7";
         assert_eq!(1320, process(input, false));
+    }
+
+    #[test]
+    fn part2() {
+        let input = "rn=1,cm-,qp=3,cm=2,qp-,pc=4,ot=9,ab=5,pc-,pc=6,ot=7";
+        assert_eq!(145, process(input, true));
     }
 }
