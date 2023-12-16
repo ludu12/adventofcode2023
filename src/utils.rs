@@ -17,3 +17,9 @@ pub fn transpose<T>(v: Vec<Vec<T>>) -> Vec<Vec<T>> {
 pub fn grid(input: &str) -> Vec<Vec<char>> {
     return input.lines().map(|l| l.chars().collect_vec()).collect_vec();
 }
+
+pub fn print_grid(grid: &Vec<Vec<char>>) {
+    for row in grid {
+        println!("{}", row.iter().collect::<String>())
+    }
+}
