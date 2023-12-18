@@ -28,37 +28,76 @@ enum Direction {
 #[derive(Debug, Hash, PartialEq, Eq, Copy, Clone, PartialOrd, Ord)]
 struct Instruction {
     direction: Direction,
-    meters: u8,
-
+    meters: i64,
     // hex: &
 }
 
 fn calc_area(instructions: &Vec<Instruction>) -> i64 {
-    return 1;
+    let mut area = 0;
+    let mut perimeter = 0;
+    let (mut x, mut y) = (0,0);
+
+    for instruction in instructions {
+        let m = instruction.meters;
+        let (x0, y0) = (x, y);
+        let length = m;
+        match instruction.direction {
+            Direction::Up => y += length,
+            Direction::Right => x += length,
+            Direction::Down => y -= length,
+            Direction::Left => x -= length,
+        };
+
+        // Shoelace formula
+        area += (x0 * y) - (y0 * x);
+
+        perimeter += length;
+    }
+
+    let area = i64::abs(area) / 2;
+    // Pick's theorem -> A = i + b/2 + 1
+    let interior: i64 = area - (perimeter / 2) + 1;
+
+    return interior + perimeter;
 }
 
-fn process(input: &str, part2: bool) -> u32 {
+fn process(input: &str, part2: bool) -> i64 {
     let instructions = input.lines().map(|l| {
         let (code, hex) = l.split_once(" (#").unwrap();
 
-        let bytes = code.as_bytes();
-        let l = bytes[2] - b'0';
-        let d = match bytes[0] {
-            b'U' => Direction::Up,
-            b'R' => Direction::Right,
-            b'D' => Direction::Down,
-            b'L' => Direction::Left,
-            _ => unreachable!()
-        };
-        return Instruction {
-            direction: d,
-            meters: l
+        return if part2 {
+            let d = hex.as_bytes()[hex.len() - 2];
+            let direction = match d {
+                b'0' => Direction::Up,
+                b'1' => Direction::Right,
+                b'2' => Direction::Down,
+                b'3' => Direction::Left,
+                _ => unreachable!()
+            };
+
+            let meters  = i64::from_str_radix(&hex[0..hex.len()-2], 16).unwrap();
+            Instruction {
+                direction,
+                meters,
+            }
+        } else {
+            let (d, l) = code.split_once(" ").unwrap();
+            let meters = l.parse::<i64>().unwrap();
+            let direction = match d.as_bytes()[0] {
+                b'U' => Direction::Up,
+                b'R' => Direction::Right,
+                b'D' => Direction::Down,
+                b'L' => Direction::Left,
+                _ => unreachable!()
+            };
+            Instruction {
+                direction,
+                meters,
+            }
         }
     }).collect_vec();
 
-
-
-    return 62;
+    return calc_area(&instructions);
 }
 
 
@@ -68,6 +107,17 @@ mod test {
 
     #[test]
     fn part1a() {
+        let input = "R 4 (#70c710)
+D 4 (#0dc571)
+L 4 (#5713f0)
+U 4 (#d2c081)";
+        // 4 * 4 = 16 (outside)
+        // 3 * 3 = 9 (inside)
+        assert_eq!(25, process(input, false));
+    }
+
+    #[test]
+    fn part1b() {
         let input = "R 6 (#70c710)
 D 5 (#0dc571)
 L 2 (#5713f0)
@@ -85,9 +135,23 @@ U 2 (#7a21e3)";
         assert_eq!(62, process(input, false));
     }
 
+
     #[test]
     fn part2() {
-        let input = "rn=1,cm-,qp=3,cm=2,qp-,pc=4,ot=9,ab=5,pc-,pc=6,ot=7";
-        assert_eq!(145, process(input, true));
+        let input = "R 6 (#70c710)
+D 5 (#0dc571)
+L 2 (#5713f0)
+D 2 (#d2c081)
+R 2 (#59c680)
+D 2 (#411b91)
+L 5 (#8ceee2)
+U 2 (#caa173)
+L 1 (#1b58a2)
+U 2 (#caa171)
+R 2 (#7807d2)
+U 3 (#a77fa3)
+L 2 (#015232)
+U 2 (#7a21e3)";
+        assert_eq!(952408144115, process(input, true));
     }
 }
