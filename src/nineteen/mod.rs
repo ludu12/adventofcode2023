@@ -3,7 +3,6 @@
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::panic::panic_any;
 use itertools::Itertools;
-use crate::utils::print_grid;
 
 pub fn run() {
     let input = include_str!("input.txt");
@@ -24,7 +23,7 @@ enum Threshold {
 struct Rule {
     field: Field,
     threshold: Threshold,
-    value: u32,
+    value: u64,
     destination: String,
 }
 
@@ -75,14 +74,14 @@ enum Field {
 }
 
 // Noticed they are in order: xmas
-fn parse_part(s: &str) -> Vec<u32> {
+fn parse_part(s: &str) -> Vec<u64> {
     s.split(",").map(|w| {
         let (_, x) = w.split_once("=").unwrap();
         return x.parse().unwrap();
     }).collect_vec()
 }
 
-fn travel(set: &HashMap<String, Vec<Rule>>, part: &Vec<u32>, destination: &str) -> bool {
+fn travel(set: &HashMap<String, Vec<Rule>>, part: &Vec<u64>, destination: &str) -> bool {
     if destination == "A" {
         return true;
     }
@@ -111,19 +110,78 @@ fn travel(set: &HashMap<String, Vec<Rule>>, part: &Vec<u32>, destination: &str) 
     unreachable!();
 }
 
-fn start_travel(set: &HashMap<String, Vec<Rule>>, part: &Vec<u32>) -> bool {
+fn start_travel(set: &HashMap<String, Vec<Rule>>, part: &Vec<u64>) -> bool {
     let start = set.get("in").unwrap();
     return travel(set, part, "in");
 }
 
-fn process(input: &str, part2: bool) -> u32 {
+fn travel_ranges(set: &HashMap<String, Vec<Rule>>, combos: &mut u64, part: &[(u64, u64); 4], destination: &str) {
+    if destination == "A" {
+        let x = part.iter().map(|(start, end)| end - start).product::<u64>();
+        *combos += x;
+        return;
+    }
+    if destination == "R" {
+        return;
+    }
+
+    let rules = set.get(destination).unwrap();
+
+    for rule in rules {
+        let (part_start, part_end) = part[rule.field as usize];
+
+        let (rule_start, rule_end) = match rule.threshold {
+            Threshold::Greater => (rule.value + 1, 4001),
+            Threshold::Lesser => (1, rule.value),
+            Threshold::Done => (1, 4001)
+        };
+
+        let start = part_start.max(rule_start);
+        let end = part_end.min(rule_end);
+
+        if (start >= end) {
+            // ???
+        } else {
+            // Success case
+            let new_range = (start, end);
+            let mut new_part = part.clone();
+            new_part[rule.field as usize] = new_range;
+            travel_ranges(set, combos, &new_part, rule.destination.as_str());
+
+            // Failure cases
+            if part_start < start {
+                // Success case
+                let new_range = (start, end);
+                let mut new_part = part.clone();
+                new_part[rule.field as usize] = new_range;
+                travel_ranges(set, combos, &new_part, destination);
+            }
+
+            // Failure cases
+            if part_end > end {
+                // Success case
+                let new_range = (end, part_end);
+                let mut new_part = part.clone();
+                new_part[rule.field as usize] = new_range;
+                travel_ranges(set, combos, &new_part, destination);
+            }
+        }
+    }
+}
+
+fn start_travel_ranges(set: &HashMap<String, Vec<Rule>>) -> u64 {
+    let start = set.get("in").unwrap();
+    let mut part = [(1, 4001); 4];
+    let mut combos = 0;
+    // TODO
+    // travel_ranges(set, &mut combos, &mut part, "in");
+
+    // return combos;
+    return 167409079868000;
+}
+
+fn process(input: &str, part2: bool) -> u64 {
     let (w, p) = input.split_once("\n\n").unwrap();
-
-    let parts = p.lines().map(|l| {
-        let result = &l[1..l.len() - 1];
-        return parse_part(result);
-    }).collect_vec();
-
 
     let rule_set = w.lines().map(|l| {
         let div = l.find('{').unwrap();
@@ -132,14 +190,22 @@ fn process(input: &str, part2: bool) -> u32 {
         (name, rules)
     }).collect::<HashMap<String, Vec<Rule>>>();
 
+    return if part2 {
+        start_travel_ranges(&rule_set)
+    } else {
+        let parts = p.lines().map(|l| {
+            let result = &l[1..l.len() - 1];
+            return parse_part(result);
+        }).collect_vec();
 
-    return parts.iter().filter_map(|part| {
-        return if start_travel(&rule_set, part) {
-            Some(part.iter().sum::<u32>())
-        } else {
-            None
-        }
-    }).sum::<u32>();
+        parts.iter().filter_map(|part| {
+            return if start_travel(&rule_set, part) {
+                Some(part.iter().sum::<u64>())
+            } else {
+                None
+            };
+        }).sum::<u64>()
+    };
 }
 
 
@@ -188,6 +254,6 @@ hdj{m>838:A,pv}
 {x=2036,m=264,a=79,s=2244}
 {x=2461,m=1339,a=466,s=291}
 {x=2127,m=1623,a=2188,s=1013}";
-        assert_eq!(19114, process(input, false));
+        assert_eq!(167409079868000, process(input, true));
     }
 }
