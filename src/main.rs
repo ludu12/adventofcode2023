@@ -18,6 +18,7 @@ mod fifteen;
 mod sixteen;
 mod seventeen;
 mod eighteen;
+mod nineteen;
 mod utils;
 
 fn main() {
@@ -49,6 +50,7 @@ fn main() {
         16 => sixteen::run(),
         17 => seventeen::run(),
         18 => eighteen::run(),
+        19 => nineteen::run(),
         _ => println!("Invalid advent number! \"{}\"", num),
     }
 }
