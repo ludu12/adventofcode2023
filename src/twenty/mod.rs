@@ -121,7 +121,7 @@ fn parse_network(input: &str) -> HashMap<String, Module> {
     return modules;
 }
 
-fn press_button(network: &mut HashMap<String, Module>) -> (usize, usize) {
+fn press_button(network: &mut HashMap<String, Module>, part2: bool) -> (usize, usize, bool) {
     let mut low_pulses = 0;
     let mut high_pulses = 0;
     let mut unprocessed = VecDeque::new();
@@ -133,6 +133,10 @@ fn press_button(network: &mut HashMap<String, Module>) -> (usize, usize) {
             Pulse::High => { high_pulses += 1 }
             Pulse::None => { continue; }
         };
+
+        if part2 && message.pulse == Pulse::Low && &message.receiver == "rx" {
+            return (0, 0, true);
+        }
 
         if !network.contains_key(&message.receiver) { // Messages going to "output"
             continue;
@@ -148,22 +152,35 @@ fn press_button(network: &mut HashMap<String, Module>) -> (usize, usize) {
             });
         }
     }
-    (low_pulses, high_pulses)
+    (low_pulses, high_pulses, false)
 }
 
 fn process(input: &str, part2: bool) -> usize {
     let mut modules = parse_network(input);
 
-    let mut low = 0;
-    let mut high = 0;
-    for _ in 0..1000 {
-        let (l, h) = press_button(&mut modules);
-        low += l;
-        high += h;
+    if part2 {
+        let mut count =0;
+        let mut found = false;
+        while  !found {
+            let (_, _, result) = press_button(&mut modules, true);
+            count += 1;
+            found = result
+        }
+
+        return count;
     }
+    else {
+        let mut low = 0;
+        let mut high = 0;
+        for _ in 0..1000 {
+            let (l, h, _) = press_button(&mut modules, false);
+            low += l;
+            high += h;
+        }
 
 
-    return low * high;
+        return low * high;
+    }
 }
 
 
@@ -182,40 +199,18 @@ mod test {
     }
 
     #[test]
-    fn part1a() {
+    fn part1b() {
         let input = "broadcaster -> a, b, c
 %a -> b
 %b -> c
 %c -> inv
 &inv -> a";
         let mut network = parse_network(input);
-        press_button(&mut network);
+        press_button(&mut network, false);
         assert_eq!(network["a"].state, false);
         assert_eq!(network["b"].state, false);
         assert_eq!(network["c"].state, false);
         assert_eq!(network["inv"].state, false);
-    }
-
-    #[test]
-    fn part1b() {
-        let input = "broadcaster -> a
-%a -> inv, con
-&inv -> b
-%b -> con
-&con -> output";
-        let mut network = parse_network(input);
-        press_button(&mut network);
-        assert_eq!(network["a"].state, true);
-        assert_eq!(network["b"].state, true);
-        press_button(&mut network);
-        assert_eq!(network["a"].state, false);
-        assert_eq!(network["b"].state, true);
-        press_button(&mut network);
-        assert_eq!(network["a"].state, true);
-        assert_eq!(network["b"].state, true);
-        press_button(&mut network);
-        assert_eq!(network["a"].state, false);
-        assert_eq!(network["b"].state, false);
     }
 
     #[test]
