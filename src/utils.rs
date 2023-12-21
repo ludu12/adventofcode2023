@@ -47,3 +47,47 @@ pub fn gcd(first: i64, second: i64) -> i64 {
         min = res;
     }
 }
+
+
+#[derive(Debug, PartialOrd, Ord, PartialEq, Eq, Clone, Copy)]
+pub enum Direction {
+    North,
+    East,
+    South,
+    West,
+}
+
+#[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+pub struct Position {
+    pub x: i32,
+    pub y: i32,
+}
+
+impl Position {
+    pub fn is_valid(&self, max_x: usize, max_y: usize) -> bool {
+        let p = self;
+        p.x >= 0 && p.y >= 0 && p.x < max_x as i32 && p.y < max_y as i32
+    }
+
+    pub fn up(&self) -> Position {
+        Position { x: self.x, y: self.y - 1 }
+    }
+    pub fn down(&self) -> Position {
+        Position { x: self.x, y: self.y + 1 }
+    }
+    pub fn left(&self) -> Position {
+        Position { x: self.x - 1, y: self.y }
+    }
+    pub fn right(&self) -> Position {
+        Position { x: self.x + 1, y: self.y }
+    }
+
+    pub fn go(&self, d: Direction) -> Position {
+        match d {
+            Direction::North => self.up(),
+            Direction::East => self.right(),
+            Direction::South => self.down(),
+            Direction::West => self.left()
+        }
+    }
+}
