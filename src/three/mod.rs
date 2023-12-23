@@ -1,7 +1,5 @@
 #![allow(warnings, unused)]
 
-use std::cmp::{max, min};
-
 pub fn run() {
     let input = include_str!("input.txt");
     let part1 = process(input, false);

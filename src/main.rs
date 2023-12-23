@@ -56,7 +56,7 @@ fn main() {
         19 => nineteen::run(),
         20 => twenty::run(),
         21 => twentyone::run(),
-        22 => twentyone::run(),
+        22 => twentytwo::run(),
         _ => println!("Invalid advent number! \"{}\"", num),
     }
 }
