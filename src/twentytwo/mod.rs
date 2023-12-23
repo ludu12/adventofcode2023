@@ -1,6 +1,6 @@
 #![allow(warnings, unused)]
 
-use std::collections::{HashMap, HashSet};
+use std::collections::{HashMap, HashSet, VecDeque};
 use itertools::Itertools;
 
 pub fn run() {
@@ -32,7 +32,7 @@ impl Brick {
 }
 
 fn parse_bricks(input: &str) -> Vec<Brick> {
-    return input.lines().map(|l| {
+    return input.lines().enumerate().map(|(i, l)| {
         let (from, to) = l.split_once('~').unwrap();
 
         let mut from_split = from.split(',');
@@ -98,44 +98,80 @@ fn drop_bricks(bricks: &Vec<Brick>) -> Vec<Brick> {
     return new_bricks;
 }
 
-fn process(input: &str, part2: bool) -> usize {
-    let mut bricks = parse_bricks(input);
-    bricks.sort_by_key(|b| b.from);
-    let dropped_bricks = drop_bricks(&bricks);
-
+fn get_supports(bricks: &Vec<Brick>) -> (Vec<HashSet<usize>>, Vec<HashSet<usize>>) {
     // Using indices for set
-    let mut supports = vec![HashSet::new(); dropped_bricks.len()];
-    let mut supported_by = vec![HashSet::new(); dropped_bricks.len()];
+    let mut supports = vec![HashSet::new(); bricks.len()];
+    let mut supported_by = vec![HashSet::new(); bricks.len()];
 
-    for i in (0..dropped_bricks.len()) {
-        let upper = dropped_bricks[i];
+    for i in (0..bricks.len()) {
+        let upper = bricks[i];
         for j in (0..i) {
-            let lower = dropped_bricks[j];
+            let lower = bricks[j];
 
             // if they overlap and the upper is sitting on top of the lower
             if lower.overlaps(&upper) && upper.from.z == lower.to.z + 1 {
-                supported_by[i].insert(j);
                 supports[j].insert(i);
+                supported_by[i].insert(j);
             }
         }
     }
 
+    return (supports, supported_by);
+}
 
-    let total = (0..dropped_bricks.len()).fold(0, |total, i| {
-        // if the bricks this one supports has 2 or more other supporters, then we can remove
-        if (supports[i].iter().all(|b| {
-            let x = supported_by.iter().nth(*b).unwrap().len() >= 2;
+fn process(input: &str, part2: bool) -> usize {
+    let mut bricks = parse_bricks(input);
+    bricks.sort_by_key(|b| b.from);
 
 
+    return if part2 {
+        let mut total = 0;
+        let mut dropped_bricks = drop_bricks(&bricks);
+        let (supports, supported_by) = get_supports(&dropped_bricks);
 
-            return x;
-        })) {
-            return total + 1;
+        for i in (0..dropped_bricks.len()) {
+            let mut queue = VecDeque::new();
+            let mut falling = HashSet::new();
+
+            falling.insert(i);
+            supports[i].iter().for_each(|s| {
+                let v = supported_by[*s].iter().collect_vec();
+                if (v.len() == 1) {
+                    falling.insert(*v[0]);
+                    queue.push_back(*v[0]);
+                }
+            });
+
+            while let Some(q) = queue.pop_back() {
+                for support in supports[q].clone().into_iter() {
+                    if !falling.contains(&support) {
+                        if supports[support].iter().all(|x| falling.contains(x)) {
+                            queue.push_back(support);
+                            falling.insert(support);
+                        }
+                    }
+                }
+            }
+
+            total += falling.len() - 1;
         }
-        total
-    });
 
-    return total;
+        dbg!(total);
+        7
+    } else {
+        let mut dropped_bricks = drop_bricks(&bricks);
+        let (supports, supported_by) = get_supports(&dropped_bricks);
+
+        let total = (0..dropped_bricks.len()).fold(0, |total, i| {
+            // if the bricks this one supports has 2 or more other supporters, then we can remove
+            if (supports[i].iter().all(|b| { supported_by.iter().nth(*b).unwrap().len() >= 2 })) {
+                return total + 1;
+            }
+            total
+        });
+
+        total
+    };
 }
 
 
@@ -154,5 +190,17 @@ mod test {
 0,1,6~2,1,6
 1,1,8~1,1,9";
         assert_eq!(5, process(input, false));
+    }
+
+    #[test]
+    fn part2() {
+        let input = "1,0,1~1,2,1
+0,0,2~2,0,2
+0,2,3~2,2,3
+0,0,4~0,2,4
+2,0,5~2,2,5
+0,1,6~2,1,6
+1,1,8~1,1,9";
+        assert_eq!(7, process(input, true));
     }
 }
